@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # Mutation check of the L0 tests: each mutant changes one tricky rule of
 # package/Tar.roc, runs `roc test` on each tests/*.roc, records which files
-# fail (a run of more than 120 s counts as a fail), and restores the file. A mutant that no test kills exits 1.
+# have a failed expect (a run of more than 120 s counts as a fail), and restores
+# the file. A mutant that no test kills (or that only gives compile errors) exits 1.
 # Usage: python3 -I scripts/mutants.py ROC [ID...]
-import pathlib, signal, subprocess, sys
+import pathlib, re, signal, subprocess, sys
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
 SRC = HERE / "package" / "Tar.roc"
@@ -65,10 +66,13 @@ try:
             except subprocess.TimeoutExpired:
                 failed.append(f"{t.name} (timeout)")
                 continue
-            if r.returncode != 0:
-                tail = (r.stdout + r.stderr).strip().splitlines()[-4:]
-                kind = "compile error" if any("compiler error" in l and not l.strip().startswith("0 compiler") for l in tail) else "fail"
-                failed.append(f"{t.name} ({kind})")
+            out = r.stdout + r.stderr
+            # A warning (for example an unconditional if) also gives a nonzero
+            # exit, so count only a failed expect or a compile error.
+            if re.search(r"^\s*[1-9][0-9]* failed", out, re.M):
+                failed.append(f"{t.name} (fail)")
+            elif re.search(r"^\s*[1-9][0-9]* compiler error|Compilation failed|── ✗", out, re.M):
+                failed.append(f"{t.name} (compile error)")
         if not failed or all("compile error" in f for f in failed):
             survived.append(mid)
         print(f"| {mid} | {what} | {', '.join(failed) if failed else 'NONE: survived'} |", flush=True)
