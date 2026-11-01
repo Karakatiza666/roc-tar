@@ -1,0 +1,4 @@
+*.roc text eol=lf
+*.tsv text eol=lf
+*.list text eol=lf
+*.tar binary

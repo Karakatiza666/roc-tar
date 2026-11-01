@@ -164,10 +164,10 @@ All 36 bundles in the local roc cache (2 KB to 100 MB unpacked) have only type `
 
 ## Usage
 
-Add the release to the header of your app, package or platform (there is no release yet):
+Add the release to the header of your app, package or platform:
 
 ```roc
-tar: "https://github.com/Karakatiza666/roc-tar/releases/download/<version>/<hash>.tar.zst",
+tar: "https://github.com/Karakatiza666/roc-tar/releases/download/0.0.1/FGAUE1Pds7Fvd48GkrAYd9rRUpztew8bgUZjUrKPGyo7.tar.zst",
 ```
 
 Then, for example, the header file and the paths of an archive that comes in chunks:
@@ -306,6 +306,8 @@ Not about tar, for the registry: the zstd decode of the platform is the cost. It
 ## Release
 
 `.github/workflows/release.yml` makes a release with [roc-lang/release-package](https://github.com/roc-lang/release-package): `gh workflow run release.yml --ref main -f release_version=X.Y.Z`. The tag is `X.Y.Z` with no prefix, and the one package asset is `<hash>.tar.zst` from `roc bundle`.
+
+The hash is the hash of `roc bundle main.roc Tar.roc` of this commit with nightly-2026-10-31-f7bef6b (the bundle step of `release.yml`). The release asset has the same name when `package/` does not change. Check the name on the release page before you use the URL.
 
 ## License
 
