@@ -1,0 +1,58 @@
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"read","rep":0,"wallMs":9.979521000000005,"text":"chunks=128 packed=511488 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"read","rep":1,"wallMs":7.948249999999973,"text":"chunks=128 packed=511488 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"read","rep":2,"wallMs":8.362587999999988,"text":"chunks=128 packed=511488 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"read","rep":3,"wallMs":8.484726999999992,"text":"chunks=128 packed=511488 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"read","rep":4,"wallMs":7.46992400000002,"text":"chunks=128 packed=511488 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tarzstd","rep":0,"wallMs":12.714962000000014,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tarzstd","rep":1,"wallMs":7.2797970000000305,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tarzstd","rep":2,"wallMs":10.807834999999955,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tarzstd","rep":3,"wallMs":9.583258,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tarzstd","rep":4,"wallMs":7.095571000000064,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tar10","rep":0,"wallMs":16.027257000000077,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tar10","rep":1,"wallMs":8.722893,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tar10","rep":2,"wallMs":10.526668000000086,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tar10","rep":3,"wallMs":10.646141000000057,"text":"chunks=128 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"7CLzCK6qUz7zmj6nvBxMEFu11HPwQTnCovKiyWzDSLTW.tar","mode":"tar10","rep":4,"wallMs":8.737381000000028,"text":"chunks=129 packed=511488 unpacked=511488 b3=- members=9 header=728 paths=9 path_bytes=88 targets=0 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"read","rep":0,"wallMs":371.7706069999999,"text":"chunks=20866 packed=82798592 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"read","rep":1,"wallMs":467.82589299999995,"text":"chunks=20866 packed=82798592 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"read","rep":2,"wallMs":359.73732299999983,"text":"chunks=20866 packed=82798592 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"read","rep":3,"wallMs":433.03105000000005,"text":"chunks=20866 packed=82798592 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"read","rep":4,"wallMs":414.1477249999998,"text":"chunks=20866 packed=82798592 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tarzstd","rep":0,"wallMs":532.6601500000002,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tarzstd","rep":1,"wallMs":429.8953969999993,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tarzstd","rep":2,"wallMs":486.88305299999956,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tarzstd","rep":3,"wallMs":412.77142300000014,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tarzstd","rep":4,"wallMs":425.4441560000005,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tar10","rep":0,"wallMs":601.1848490000002,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tar10","rep":1,"wallMs":534.6005290000003,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tar10","rep":2,"wallMs":491.62144199999966,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tar10","rep":3,"wallMs":455.5234040000005,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"GddgvsGjiNXrHFW6au5i5dUDbTs8FinQdrgE2Gqmw53t.tar","mode":"tar10","rep":4,"wallMs":439.4891950000001,"text":"chunks=20866 packed=82798592 unpacked=82798592 b3=- members=207 header=8365 paths=207 path_bytes=10407 targets=175 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"read","rep":0,"wallMs":505.86094500000036,"text":"chunks=25088 packed=99550208 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"read","rep":1,"wallMs":511.2515879999992,"text":"chunks=25088 packed=99550208 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"read","rep":2,"wallMs":481.26483400000143,"text":"chunks=25088 packed=99550208 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"read","rep":3,"wallMs":454.8773020000008,"text":"chunks=25088 packed=99550208 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"read","rep":4,"wallMs":504.235095,"text":"chunks=25088 packed=99550208 unpacked=0 b3=- members=0 header=0 paths=0 path_bytes=0 targets=0 end=-"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tarzstd","rep":0,"wallMs":574.80955,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tarzstd","rep":1,"wallMs":1122.647051,"text":"chunks=25089 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tarzstd","rep":2,"wallMs":940.9789389999987,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tarzstd","rep":3,"wallMs":681.651672,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tarzstd","rep":4,"wallMs":747.5393039999999,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tar10","rep":0,"wallMs":1176.5964189999977,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tar10","rep":1,"wallMs":944.2045699999981,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tar10","rep":2,"wallMs":698.1908790000016,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tar10","rep":3,"wallMs":652.8486780000021,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+{"file":"4KBAoiBazDfi9UF6e3BYKwon6rA8mnx3dbLMLKFzdEMw.tar","mode":"tar10","rep":4,"wallMs":684.5652179999997,"text":"chunks=25088 packed=99550208 unpacked=99550208 b3=- members=242 header=7562 paths=242 path_bytes=12767 targets=213 end=TwoZeroBlocks"}
+
+| File | Packed MB | Mode | Wall ms (median, client) | wasm memory MB | Live peak MB |
+| --- | --- | --- | --- | --- | --- |
+| 7CLzCK6qUz7z | 0.5 | read | 8.4 | 2.3 | 0.0 |
+| 7CLzCK6qUz7z | 0.5 | tarzstd | 9.6 | 2.3 | 0.0 |
+| 7CLzCK6qUz7z | 0.5 | tar10 | 10.5 | 2.3 | 0.0 |
+| GddgvsGjiNXr | 79.0 | read | 414.1 | 2.3 | 0.0 |
+| GddgvsGjiNXr | 79.0 | tarzstd | 429.9 | 2.3 | 0.1 |
+| GddgvsGjiNXr | 79.0 | tar10 | 491.6 | 2.4 | 0.2 |
+| 4KBAoiBazDfi | 94.9 | read | 504.2 | 2.3 | 0.0 |
+| 4KBAoiBazDfi | 94.9 | tarzstd | 747.5 | 2.3 | 0.1 |
+| 4KBAoiBazDfi | 94.9 | tar10 | 698.2 | 2.3 | 0.1 |
+

@@ -1,0 +1,4 @@
+.work/
+dist/
+.roc-fuzz/
+bench/platform

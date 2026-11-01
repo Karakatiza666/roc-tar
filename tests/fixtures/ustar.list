@@ -1,0 +1,10 @@
+drwxrwxr-x 0 pkg/
+-rw-rw-r-- 1000 pkg/hard.bin
+lrwxrwxrwx 0 pkg/link.roc -> main.roc
+-rwxr-xr-x 15 pkg/main.roc
+drwxrwxr-x 0 pkg/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/
+drwxrwxr-x 0 pkg/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/
+drwxrwxr-x 0 pkg/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/deep/
+-rw-rw-r-- 5 pkg/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm/deep/Deep.roc
+hrw-rw-r-- 0 pkg/zeta.bin link to pkg/hard.bin
+end
