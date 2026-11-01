@@ -39,7 +39,7 @@ Tar :: {
 	## | `max_total_path_bytes` | 1048576 | `TooManyPathBytes` (the sum of the paths and link targets of all members) |
 	## | `max_total_size` | 268435456 | `TotalSizeTooLarge` (the sum of the member sizes) |
 	## | `max_collect_bytes` | 16777216 | `CollectTooLarge` (the sum of the sizes of the collected members) |
-	## | `max_meta_bytes` | 65536 | `MetaTooLarge` (the data of one pax or GNU long name header) |
+	## | `max_meta_bytes` | 65536 | `MetaTooLarge` (the data of the pax or GNU long name header that the reader reads now, plus the pax and GNU values that it keeps for the next members) |
 	Limits := {
 		max_members : U64 ?? 10000,
 		max_path_bytes : U64 ?? 4096,
@@ -240,6 +240,90 @@ Tar :: {
 		}
 	}
 
+	## `Ok({})` when `roc unbundle` accepts the path on every OS: the rules of
+	## `pathInvalidReason` in `src/unbundle/unbundle.zig` of roc-lang/roc
+	## (commit 76258c1267204e31e58d8edcdd3ede6163ef60db), in the same order,
+	## with the backslash rule of Linux and macOS. `roc bundle` applies the
+	## same function to each path that it writes.
+	##
+	## | Order | Rule | Error |
+	## | --- | --- | --- |
+	## | 1 | The path is empty | `EmptyPath` |
+	## | 2 | More than 255 bytes (`TAR_PATH_MAX_LENGTH`, `src/unbundle/format.zig`) | `TooLong` |
+	## | 3 | The first byte is `/` or `\` | `Absolute` |
+	## | 4 | The second byte is `:` (`C:x`) | `DriveLetter` |
+	## | 5 | A part is `..` (parts end at `/` or `\`; empty parts are skipped) | `ParentDir` |
+	## | 6 | A part is `.` | `DotPart` |
+	## | 7 | The part before the first `.` of a part is a Windows device name (`CON`, `PRN`, `AUX`, `NUL`, `COM1` to `COM9`, `LPT1` to `LPT9`), in any case | `ReservedName` |
+	## | 8 | A part ends with a space | `EndsWithSpace` |
+	## | 9 | A part ends with `.` | `EndsWithPeriod` |
+	## | 10 | A byte is NUL, `<`, `>`, `:`, `"`, `\|`, `?` or `*` (the first such byte) | `ReservedChar(byte)` |
+	## | 11 | A byte is `\` (roc refuses it on each OS but Windows) | `Backslash` |
+	check_portable_path : Str -> Try({}, [EmptyPath, TooLong, Absolute, DriveLetter, ParentDir, DotPart, ReservedName, EndsWithSpace, EndsWithPeriod, ReservedChar(U8), Backslash])
+	check_portable_path = |path| {
+		bytes = path.to_utf8()
+		if bytes.is_empty() {
+			return Err(EmptyPath)
+		}
+		if bytes.len() > 255 {
+			return Err(TooLong)
+		}
+		first = bytes.get(0) ?? 0
+		if first == '/' or first == '\\' {
+			return Err(Absolute)
+		}
+		if bytes.get(1) == Ok(':') {
+			return Err(DriveLetter)
+		}
+		for part in parts(bytes) {
+			if part == ['.', '.'] {
+				return Err(ParentDir)
+			}
+			if part == ['.'] {
+				return Err(DotPart)
+			}
+			base = c_until(part, '.')
+			if reserved_names.any(|name| ascii_upper(base) == name) {
+				return Err(ReservedName)
+			}
+			last = part.last() ?? 0
+			if last == ' ' {
+				return Err(EndsWithSpace)
+			}
+			if last == '.' {
+				return Err(EndsWithPeriod)
+			}
+		}
+		for b in bytes {
+			if b == 0 or b == '<' or b == '>' or b == ':' or b == '"' or b == '|' or b == '?' or b == '*' {
+				return Err(ReservedChar(b))
+			}
+			if b == '\\' {
+				return Err(Backslash)
+			}
+		}
+		Ok({})
+	}
+
+	## The bytes of state that the reader keeps now: the part of a header
+	## that two chunks split (at most 511), the pax and GNU values for the next
+	## members, and the data buffer of the member or meta header that it reads
+	## now (its full size). Between two pushes, when no member is collected,
+	## this is at most 511 + `max_meta_bytes`.
+	held_bytes : Tar -> U64
+	held_bytes = |t| {
+		body_bytes = match t.phase {
+			Body({ left, sink, .. }) =>
+				match sink {
+					Skip => 0
+					_ => t.buf.len() + left
+				}
+
+			_ => 0
+		}
+		t.pending.len() + meta_bytes(t.local) + meta_bytes(t.global) + body_bytes
+	}
+
 	## A text for each error, in English.
 	err_to_str : Tar.Error -> Str
 	err_to_str = |err| match err {
@@ -259,7 +343,7 @@ Tar :: {
 		PathTooLong({ offset, bytes, limit }) => "tar: the path or link of the member at offset ${offset.to_str()} has ${bytes.to_str()} bytes, more than the limit ${limit.to_str()}"
 		UnexpectedData({ offset, size }) => "tar: the link, directory or device at offset ${offset.to_str()} has a size of ${size.to_str()} bytes, but this type has no data"
 		MetaWithoutMember({ offset }) => "tar: the pax or GNU long name header at offset ${offset.to_str()} has no member after it"
-		MetaTooLarge({ offset, size, limit }) => "tar: the pax or GNU long name header at offset ${offset.to_str()} has ${size.to_str()} bytes, more than the limit ${limit.to_str()}"
+		MetaTooLarge({ offset, size, limit }) => "tar: the pax or GNU long name header at offset ${offset.to_str()} and the pax and GNU values before it have ${size.to_str()} bytes, more than the limit ${limit.to_str()}"
 		TooManyMembers({ offset, limit }) => "tar: the member at offset ${offset.to_str()} is more than the limit of ${limit.to_str()} members"
 		TooManyPathBytes({ offset, limit }) => "tar: at offset ${offset.to_str()} the paths and links are more than the limit of ${limit.to_str()} bytes"
 		TotalSizeTooLarge({ offset, limit }) => "tar: at offset ${offset.to_str()} the sum of the member sizes is more than the limit of ${limit.to_str()} bytes"
@@ -294,6 +378,16 @@ Meta : { path : Value(List(U8)), link : Value(List(U8)), size : Value(U64), long
 no_meta : Meta
 no_meta = { path: Inherit, link: Inherit, size: Inherit, long_path: Inherit, long_link: Inherit }
 
+# The bytes of the values of a meta record.
+meta_bytes : Meta -> U64
+meta_bytes = |m| {
+	n = |v| match v {
+		Set(x) => x.len()
+		_ => 0
+	}
+	n(m.path) + n(m.link) + n(m.long_path) + n(m.long_link)
+}
+
 has_meta : Meta -> Bool
 has_meta = |m| m != no_meta
 
@@ -305,8 +399,8 @@ end_body : Tar, Sink -> Try((Tar, List(Tar.Event)), Tar.Error)
 end_body = |t, sink| match sink {
 	Skip => Ok((t, []))
 	Keep(entry) => Ok(({ ..t, buf: [] }, [Content(entry, t.buf)]))
-	LongName => Ok(({ ..t, buf: [], local: { ..t.local, long_path: Set(c_str(t.buf)) } }, []))
-	LongLink => Ok(({ ..t, buf: [], local: { ..t.local, long_link: Set(c_str(t.buf)) } }, []))
+	LongName => Ok(({ ..t, buf: [], local: { ..t.local, long_path: Set(c_str(t.buf).release_excess_capacity()) } }, []))
+	LongLink => Ok(({ ..t, buf: [], local: { ..t.local, long_link: Set(c_str(t.buf).release_excess_capacity()) } }, []))
 	PaxLocal => {
 		m = parse_pax(t.buf, t.local) ? |_| BadPax({ offset: t.at })
 		Ok(({ ..t, buf: [], local: m }, []))
@@ -356,8 +450,10 @@ on_header = |t, h, choose| {
 	type = h.get(156) ?? 0
 	limits = t.limits
 	if type == 'x' or type == 'g' or type == 'L' or type == 'K' {
-		if header_size > limits.max_meta_bytes {
-			return Err(MetaTooLarge({ offset: at, size: header_size, limit: limits.max_meta_bytes }))
+		# The new data and the values that the reader keeps now: at most max_meta_bytes.
+		kept = meta_bytes(t.local) + meta_bytes(t.global)
+		if header_size + kept > limits.max_meta_bytes {
+			return Err(MetaTooLarge({ offset: at, size: header_size + kept, limit: limits.max_meta_bytes }))
 		}
 		sink = if (type == 'x') PaxLocal else if (type == 'g') PaxGlobal else if (type == 'L') LongName else LongLink
 		body({ ..t, buf: List.with_capacity(header_size) }, header_size, sink, [])
@@ -486,6 +582,39 @@ add = |buf, piece| match piece {
 	[first, .. as rest] => if (buf.is_empty()) buf.append(first).concat(rest) else buf.concat(piece)
 }
 
+# The parts of a path between `/` and `\`, with no empty part (as
+# `std.mem.tokenizeAny` of Zig).
+parts : List(U8) -> List(List(U8))
+parts = |bytes| {
+	var $out = []
+	var $cur = []
+	for b in bytes {
+		if b == '/' or b == '\\' {
+			if !$cur.is_empty() {
+				$out = $out.append($cur)
+			}
+			$cur = []
+		} else {
+			$cur = $cur.append(b)
+		}
+	}
+	if ($cur.is_empty()) $out else $out.append($cur)
+}
+
+# The bytes before the first `stop`.
+c_until : List(U8), U8 -> List(U8)
+c_until = |bytes, stop| match bytes.find_first_index(|b| b == stop) {
+	Ok(k) => bytes.take_first(k)
+	Err(NotFound) => bytes
+}
+
+ascii_upper : List(U8) -> List(U8)
+ascii_upper = |bytes| bytes.map(|b| if (b >= 'a' and b <= 'z') b - 32 else b)
+
+# `WINDOWS_RESERVED_NAMES` of roc `src/unbundle/unbundle.zig`.
+reserved_names : List(List(U8))
+reserved_names = ["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"].map(|n| n.to_utf8())
+
 # The bytes before the first NUL.
 c_str : List(U8) -> List(U8)
 c_str = |bytes| match bytes.find_first_index(|b| b == 0) {
@@ -589,9 +718,9 @@ parse_pax = |data, meta| {
 			return Err(BadPax)
 		}
 		$m = if key == "path".to_utf8() {
-			{ ..$m, path: if (value.is_empty()) Clear else Set(value) }
+			{ ..$m, path: if (value.is_empty()) Clear else Set(value.release_excess_capacity()) }
 		} else if key == "linkpath".to_utf8() {
-			{ ..$m, link: if (value.is_empty()) Clear else Set(value) }
+			{ ..$m, link: if (value.is_empty()) Clear else Set(value.release_excess_capacity()) }
 		} else if key == "size".to_utf8() {
 			if value.is_empty() {
 				{ ..$m, size: Clear }

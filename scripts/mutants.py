@@ -31,6 +31,14 @@ MUTANTS = [
      "Pad(_) => Err(Truncated({ offset: tar.offset, inside: Padding }))", "Pad(_) => summary(NoZeroBlock)"),
     ("M10", "collect: a member of limit + 1 bytes is collected",
      "if size > limit {", "if size > limit + 1 {"),
+    ("M11", "portable path: a backslash does not end a part",
+     "if b == '/' or b == '\\\\' {", "if b == '/' {"),
+    ("M12", "portable path: a reserved name is the whole part, not the part before the first '.'",
+     "base = c_until(part, '.')", "base = part"),
+    ("M13", "portable path: 256 bytes are good",
+     "if bytes.len() > 255 {", "if bytes.len() > 256 {"),
+    ("M14", "state: max_meta_bytes does not count the kept pax and GNU values",
+     "kept = meta_bytes(t.local) + meta_bytes(t.global)", "kept = 0"),
 ]
 HELPER = "\npick_global = |g, h| match g {\n\tSet(x) => x\n\t_ => h\n}\n"
 

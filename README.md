@@ -14,6 +14,8 @@ One module, `Tar`. The value of type `Tar` is the state of one read.
 | `Tar.push` | `Tar, List(U8), (Tar.Entry -> Tar.Action) -> Try((Tar, List(Tar.Event)), Tar.Error)` |
 | `Tar.finish` | `Tar -> Try(Tar.Summary, Tar.Error)` |
 | `Tar.check_path` | `Str -> Try({}, [EmptyPath, Absolute, ParentDir])` |
+| `Tar.check_portable_path` | `Str -> Try({}, [EmptyPath, TooLong, Absolute, DriveLetter, ParentDir, DotPart, ReservedName, EndsWithSpace, EndsWithPeriod, ReservedChar(U8), Backslash])` |
+| `Tar.held_bytes` | `Tar -> U64` |
 | `Tar.err_to_str` | `Tar.Error -> Str` |
 
 | Type | Definition |
@@ -63,7 +65,7 @@ After an error, do not push again. The caller can still hash the rest of the str
 | `max_total_path_bytes` | 1048576 | `TooManyPathBytes` | The sum of the bytes of all paths and link targets (the memory of a member list) |
 | `max_total_size` | 268435456 | `TotalSizeTooLarge` | The sum of the member sizes. Checked at each header, before the data. |
 | `max_collect_bytes` | 16777216 | `CollectTooLarge` | The sum of the sizes of the collected members |
-| `max_meta_bytes` | 65536 | `MetaTooLarge` | The data of one pax or GNU long name header (the reader keeps it until the next member) |
+| `max_meta_bytes` | 65536 | `MetaTooLarge` | The data of the pax or GNU long name header that the reader reads now, plus the pax and GNU values that it keeps for the next members. Checked at each meta header, before its data. |
 
 Example: `Tar.new(Tar.Limits.{ max_members: 2000, max_total_size: 524288000 })`.
 
@@ -81,7 +83,7 @@ Example: `Tar.new(Tar.Limits.{ max_members: 2000, max_total_size: 524288000 })`.
 | `PathTooLong({ offset, bytes, limit })` | Limit `max_path_bytes` |
 | `UnexpectedData({ offset, size })` | A hard link, symbolic link, device, directory or FIFO (types `1` to `6`) with a size that is not 0. Readers do not agree on its data, so the reader refuses it. |
 | `MetaWithoutMember({ offset })` | A pax `x` or GNU `L`/`K` header with no member after it |
-| `MetaTooLarge({ offset, size, limit })` | Limit `max_meta_bytes` |
+| `MetaTooLarge({ offset, size, limit })` | Limit `max_meta_bytes`. `size` is the data of the new meta header plus the values that the reader keeps. |
 | `TooManyMembers({ offset, limit })` | Limit `max_members` |
 | `TooManyPathBytes({ offset, limit })` | Limit `max_total_path_bytes` |
 | `TotalSizeTooLarge({ offset, limit })` | Limit `max_total_size` |
@@ -103,7 +105,30 @@ Example: `Tar.new(Tar.Limits.{ max_members: 2000, max_total_size: 524288000 })`.
 
 ### Paths
 
-The reader gives each path as it is in the archive. `Tar.check_path(path)` is `Ok({})` when the path is safe to make under a root directory: not empty, no leading `/`, and no part between two `/` that is `..`. Duplicate paths, `.` parts and reserved names are for the caller.
+The reader gives each path as it is in the archive. Two checks are for the caller:
+
+| Function | `Ok({})` when |
+| --- | --- |
+| `Tar.check_path` | The path is safe to make under a root directory: not empty, no leading `/`, and no part between two `/` that is `..` |
+| `Tar.check_portable_path` | `roc unbundle` accepts the path on each OS: all rules below |
+
+`check_portable_path` applies the rules of `pathInvalidReason` in `src/unbundle/unbundle.zig` of roc-lang/roc (commit `76258c1267204e31e58d8edcdd3ede6163ef60db`), in the same order, and gives the first rule that fails. `roc unbundle` refuses an archive with such a path, and `roc bundle` applies the same function to each path that it writes. A part is the text between two separators, `/` or `\`; an empty part is skipped (`std.mem.tokenizeAny`).
+
+| Order | Rule | Error | roc reason |
+| --- | --- | --- | --- |
+| 1 | The path is empty | `EmptyPath` | `empty_path` |
+| 2 | More than 255 bytes (`TAR_PATH_MAX_LENGTH`, `src/unbundle/format.zig`) | `TooLong` | `path_too_long` |
+| 3 | The first byte is `/` or `\` | `Absolute` | `absolute_path` |
+| 4 | The second byte is `:` (`C:x`, also `1:`) | `DriveLetter` | `absolute_path` |
+| 5 | A part is `..` | `ParentDir` | `path_traversal` |
+| 6 | A part is `.` | `DotPart` | `current_directory_reference` |
+| 7 | The text before the first `.` of a part is `CON`, `PRN`, `AUX`, `NUL`, `COM1` to `COM9` or `LPT1` to `LPT9`, in any case (`con.roc` and `aux.tar.gz` fail, `x.CON`, `COM0` and `CON .roc` pass) | `ReservedName` | `windows_reserved_name` |
+| 8 | A part ends with a space | `EndsWithSpace` | `component_ends_with_space` |
+| 9 | A part ends with `.` | `EndsWithPeriod` | `component_ends_with_period` |
+| 10 | A byte is NUL, `<`, `>`, `:`, `"`, `\|`, `?` or `*` | `ReservedChar(byte)` | `windows_reserved_char` |
+| 11 | A byte is `\` | `Backslash` | `contained_backslash_on_unix` (on Windows, roc bundle writes `/` for it, so no archive has it) |
+
+Rules 10 and 11 give the first such byte of the path. `roc unbundle` checks a symbolic link target with other rules (`linkTargetUnbundleErr`), but a roc bundle has no links. Duplicate paths, and two paths that differ only in case, are for the caller.
 
 ### Memory
 
@@ -111,9 +136,12 @@ The reader gives each path as it is in the archive. `Tar.check_path(path)` is `O
 | --- | --- |
 | A skipped member | Nothing: the reader counts its bytes |
 | A header that two chunks split | At most 511 bytes, in a buffer of its own |
-| A collected member | Its bytes, in a buffer of its own of `size` bytes |
-| A pax or GNU long name header | Its data (at most `max_meta_bytes`) until the next member |
+| A collected member | Its bytes, in a buffer of its own of `size` bytes, from its header to its last byte |
+| A pax or GNU long name header that the reader reads now | A buffer of its data size |
+| The pax `x` and GNU `L`/`K` values for the next member, and the pax `g` values | A copy of each value (`path`, `linkpath`, long name, long link), with no NUL. The `x`, `L` and `K` values go at the next member; the `g` values stay. |
 | Path and link texts | A copy of their bytes |
+
+The bound: at each meta header, the reader checks that its data size plus the values that it keeps is at most `max_meta_bytes`. So between two pushes, when no member is collected, the state is at most 511 + `max_meta_bytes` bytes (plus the fixed fields of the record): 511 bytes of a split header and the kept values, or 0 header bytes and a meta buffer with the kept values. A collected member adds its size. `Tar.held_bytes(tar)` gives this count. `tests/state.roc` checks it after each push, for chunks of 1 to 1100 bytes of an archive with pax `g` and `x`, GNU `L` and `K`: the most is 511 + 320 with 1-byte chunks.
 
 The reader never keeps a slice of a chunk: a Roc `List.sublist` or `Str.from_utf8` can share the memory of the whole chunk, so the reader copies the bytes that it keeps. Without this copy, the list of paths kept a reference to a decoded chunk for each member, and the live memory of the measure app was 6 MB more (see Measurement).
 
@@ -180,10 +208,10 @@ header_and_paths = |chunks| {
 
 | Layer | Files | Tool |
 | --- | --- | --- |
-| L0 | `tests/header.roc` (fields, types, checksum, octal, magic, paths, `check_path`), `tests/stream.roc` (a split at each byte, chunks of 1 to 1100 bytes, a cut at each byte, the end blocks, padding), `tests/meta.roc` (pax `x` and `g`, GNU `L` and `K`), `tests/limits.roc` (each limit), `tests/fixtures.roc` (archives of GNU tar 1.35 in the gnu, pax and ustar formats and of roc bundle, against their `tar -tv`) | `roc test` |
+| L0 | `tests/header.roc` (fields, types, checksum, octal, magic, paths, `check_path`), `tests/stream.roc` (a split at each byte, chunks of 1 to 1100 bytes, a cut at each byte, the end blocks, padding), `tests/meta.roc` (pax `x` and `g`, GNU `L` and `K`), `tests/limits.roc` (each limit), `tests/portable.roc` (each rule of `check_portable_path`, and the verdicts of `roc bundle` in `tests/fixtures/portable.tsv`, made by `scripts/portable-oracle.sh`), `tests/state.roc` (the state bound), `tests/fixtures.roc` (archives of GNU tar 1.35 in the gnu, pax and ustar formats and of roc bundle, against their `tar -tv`) | `roc test` |
 | L1 | `fuzz/split.roc` (on mutated archives and on any bytes: no crash, and the chunk sizes do not change the result), `fuzz/roundtrip.roc` (random members written with ustar prefix, pax `path` or GNU `L`, read back in random chunks) | [roc-fuzz](https://github.com/lukewilliamboswell/roc-fuzz) 0.4.3 |
 | Real bundles | `scripts/bundles.sh [ROC] [FILE.tar.zst...]`: `tests/tools/tarlist.roc` (basic-cli, reads standard input in chunks) against GNU `tar -tv`, for the fixtures and each bundle in the roc cache | basic-cli 0.26.0, GNU tar |
-| Mutations | `scripts/mutants.py ROC`: 10 changes to tricky rules of `package/Tar.roc`; each must make a test fail | `roc test` |
+| Mutations | `scripts/mutants.py ROC [ID...]`: 14 changes to tricky rules of `package/Tar.roc`; each must make a test fail | `roc test` |
 
 `scripts/test.sh [ROC [FUZZ_ROC]]` runs `roc check`, `roc fmt --check`, the L0 tests and the L1 targets. `scripts/fixtures.sh` makes `tests/fixtures/` again. Use the nightly in `.roc-version` (the nightly of the Cloudflare Workers platform 0.0.2). CI (`.github/workflows/ci.yml`) runs the same checks on that nightly. The package also checks and passes `tests/header.roc` on `nightly-2026-10-14-38a3029`.
 
@@ -205,8 +233,12 @@ header_and_paths = |chunks| {
 | M8 | ustar: the prefix and the name are joined with no `/` | fixtures.roc, header.roc |
 | M9 | truncation: an input that ends in the padding is a clean end | stream.roc |
 | M10 | collect: a member of limit + 1 bytes is collected | limits.roc |
+| M11 | portable path: a backslash does not end a part | portable.roc |
+| M12 | portable path: a reserved name is the whole part, not the text before the first `.` | portable.roc |
+| M13 | portable path: 256 bytes are good | portable.roc |
+| M14 | state: `max_meta_bytes` does not count the kept pax and GNU values | state.roc |
 
-All 10 are killed. M3 is killed only by the fixtures: the test writer puts a space in the last checksum byte, and GNU tar and Zig put a NUL there.
+All 14 are killed. M3 is killed only by the fixtures: the test writer puts a space in the last checksum byte, and GNU tar and Zig put a NUL there.
 
 ## Measurement
 

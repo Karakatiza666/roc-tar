@@ -1,0 +1,46 @@
+ok	a.roc
+ok	dir/b.roc
+ok	.hidden
+ok	a b/c.roc
+ok	x-.roc
+ok	x.CON
+ok	CONX.roc
+ok	COM0.roc
+ok	COM10
+ok	LPT
+ok	é.roc
+ok	a..b
+ReservedName	con.roc
+ReservedName	CON
+ReservedName	Nul
+ReservedName	aux.tar.gz
+ReservedName	LPT9.txt
+ReservedName	com1
+ReservedName	dir/PRN.roc
+ok	CON .roc
+EndsWithSpace	x 
+EndsWithSpace	dir /a
+EndsWithPeriod	a.
+EndsWithPeriod	a./b
+EndsWithPeriod	...
+EndsWithPeriod	x.roc.
+Absolute	C:x
+Absolute	1:
+ReservedChar	ab:c
+ReservedChar	a<b
+ReservedChar	a>b
+ReservedChar	a"b
+ReservedChar	a|b
+ReservedChar	a?b
+ReservedChar	a*b
+Backslash	a\b
+Absolute	\x
+ParentDir	a\..\b
+DotPart	a\.\b
+ReservedName	CON\x
+EndsWithSpace	x \y
+ReservedChar	a?\b
+Backslash	a\?b
+Backslash	a\:b
+ok	ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd/ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd/fffffffffffffffffffffffffffffffffffffffffffffffffffffff
+TooLong	ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd/ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd/ffffffffffffffffffffffffffffffffffffffffffffffffffffffff
