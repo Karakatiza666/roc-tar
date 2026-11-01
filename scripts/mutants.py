@@ -40,6 +40,13 @@ MUTANTS = [
      "if bytes.len() > 255 {", "if bytes.len() > 256 {"),
     ("M14", "state: max_meta_bytes does not count the kept pax and GNU values",
      "kept = meta_bytes(t.local) + meta_bytes(t.global)", "kept = 0"),
+    ("M15", "type byte: NUL is given as '0' (the byte of the kind, not of the header)",
+     "offset: at, type_byte: type }", "offset: at, type_byte: if (type == 0) '0' else type }"),
+    ("M16", "roc_accepts: '7' is accepted, as its kind is File",
+     "if !(type == '0' or type == 0 or type == '5' or type == '2') {", "if !(type == '0' or type == 0 or type == '7' or type == '5' or type == '2') {"),
+    ("M17", "roc_accepts: a link target is checked with '/' as the only separator",
+     "for part in parts(bytes) {\n\t\tif part == ['.', '.'] {\n\t\t\treturn Err(ParentDir)\n\t\t}\n\t\tif part == ['.'] {\n\t\t\treturn Err(DotPart)\n\t\t}\n\t}\n\tOk({})",
+     "for part in bytes.split_on('/') {\n\t\tif part == ['.', '.'] {\n\t\t\treturn Err(ParentDir)\n\t\t}\n\t\tif part == ['.'] {\n\t\t\treturn Err(DotPart)\n\t\t}\n\t}\n\tOk({})"),
 ]
 HELPER = "\npick_global = |g, h| match g {\n\tSet(x) => x\n\t_ => h\n}\n"
 

@@ -15,12 +15,13 @@ One module, `Tar`. The value of type `Tar` is the state of one read.
 | `Tar.finish` | `Tar -> Try(Tar.Summary, Tar.Error)` |
 | `Tar.check_path` | `Str -> Try({}, [EmptyPath, Absolute, ParentDir])` |
 | `Tar.check_portable_path` | `Str -> Try({}, [EmptyPath, TooLong, Absolute, DriveLetter, ParentDir, DotPart, ReservedName, EndsWithSpace, EndsWithPeriod, ReservedChar(U8), Backslash])` |
+| `Tar.roc_accepts` | `Tar.Entry -> Try({}, [UnsupportedType(U8), Path(...), Link([Absolute, DriveLetter, ParentDir, DotPart])])` (`Path` has the errors of `check_portable_path`) |
 | `Tar.held_bytes` | `Tar -> U64` |
 | `Tar.err_to_str` | `Tar.Error -> Str` |
 
 | Type | Definition |
 | --- | --- |
-| `Tar.Entry` | `{ path : Str, kind : Tar.Kind, size : U64, mode : U32, link : Str, offset : U64 }` |
+| `Tar.Entry` | `{ path : Str, kind : Tar.Kind, size : U64, mode : U32, link : Str, offset : U64, type_byte : U8 }` |
 | `Tar.Kind` | `[File, Dir, Symlink, HardLink, Other(U8)]` |
 | `Tar.Action` | `[Skip, Collect(U64)]` |
 | `Tar.Event` | `[Entry(Tar.Entry), Content(Tar.Entry, List(U8))]` |
@@ -55,6 +56,7 @@ After an error, do not push again. The caller can still hash the rest of the str
 | `mode` | The permission bits of the header (octal field). |
 | `link` | The link target (`linkpath`, GNU `K`, or the header field). Empty for most members. |
 | `offset` | The archive offset of the ustar header of the member. |
+| `type_byte` | The type byte (offset 156) of the ustar header of the member, as it is. After a pax `x` or `g` or a GNU `L` or `K` header, it is the byte of the member header, not of the meta header. `kind` gives `File` for `0`, NUL and `7`, so use `type_byte` to tell them apart (`roc unbundle` refuses `7`). |
 
 ### Limits
 
@@ -105,12 +107,13 @@ Example: `Tar.new(Tar.Limits.{ max_members: 2000, max_total_size: 524288000 })`.
 
 ### Paths
 
-The reader gives each path as it is in the archive. Two checks are for the caller:
+The reader gives each path as it is in the archive. Three checks are for the caller:
 
 | Function | `Ok({})` when |
 | --- | --- |
 | `Tar.check_path` | The path is safe to make under a root directory: not empty, no leading `/`, and no part between two `/` that is `..` |
 | `Tar.check_portable_path` | `roc unbundle` accepts the path on each OS: all rules below |
+| `Tar.roc_accepts` | `roc unbundle` accepts the member on each OS: its type, its path and its link target (see "Member types of roc unbundle") |
 
 `check_portable_path` applies the rules of `pathInvalidReason` in `src/unbundle/unbundle.zig` of roc-lang/roc (commit `76258c1267204e31e58d8edcdd3ede6163ef60db`), in the same order, and gives the first rule that fails. `roc unbundle` refuses an archive with such a path, and `roc bundle` applies the same function to each path that it writes. A part is the text between two separators, `/` or `\`; an empty part is skipped (`std.mem.tokenizeAny`).
 
@@ -129,6 +132,26 @@ The reader gives each path as it is in the archive. Two checks are for the calle
 | 11 | A byte is `\` | `Backslash` | `contained_backslash_on_unix` (on Windows, roc bundle writes `/` for it, so no archive has it) |
 
 Rules 10 and 11 give the first such byte of the path. `roc unbundle` checks a symbolic link target with other rules (`linkTargetUnbundleErr`), but a roc bundle has no links. Duplicate paths, and two paths that differ only in case, are for the caller.
+
+### Member types of roc unbundle
+
+`roc unbundle` (`unbundleStream` in `src/unbundle/unbundle.zig`, roc-lang/roc commit `76258c1267204e31e58d8edcdd3ede6163ef60db`) reads with `std.tar.Iterator` of Zig 0.17.0 (`Iterator.next` in `lib/std/tar.zig`), with no diagnostics. `Tar.roc_accepts(entry)` applies its rules in this order and gives the first rule that fails:
+
+| Order | Rule | Error |
+| --- | --- | --- |
+| 1 | `type_byte` is not `0`, NUL, `5` or `2`. Zig gives `error.TarUnsupportedHeader` for each other member type: `1` (hard link), `3`, `4`, `6`, `7` (contiguous file), `S` and vendor types. | `UnsupportedType(byte)` |
+| 2 | `check_portable_path(path)` fails (`pathHasUnbundleErr`, for each member) | `Path(error)` |
+| 3 | Type `2` only: the link target starts with `/` or `\`, its second byte is `:`, or a part between `/` or `\` is `..` (`ParentDir`) or `.` (`DotPart`). These are the rules of `linkTargetUnbundleErr` on Unix and on Windows together. | `Link(error)` |
+
+| Type byte | roc unbundle |
+| --- | --- |
+| `0`, NUL | Makes the file |
+| `5` | Makes the directory |
+| `2` | Checks the target, then makes nothing (a TODO in roc) |
+| `x`, `g`, `L`, `K` | Meta headers, read by the iterator (never an `Entry`) |
+| Each other byte, also `7` | Refuses the archive |
+
+`roc bundle` writes only type `0`.
 
 ### Memory
 
@@ -208,10 +231,10 @@ header_and_paths = |chunks| {
 
 | Layer | Files | Tool |
 | --- | --- | --- |
-| L0 | `tests/header.roc` (fields, types, checksum, octal, magic, paths, `check_path`), `tests/stream.roc` (a split at each byte, chunks of 1 to 1100 bytes, a cut at each byte, the end blocks, padding), `tests/meta.roc` (pax `x` and `g`, GNU `L` and `K`), `tests/limits.roc` (each limit), `tests/portable.roc` (each rule of `check_portable_path`, and the verdicts of `roc bundle` in `tests/fixtures/portable.tsv`, made by `scripts/portable-oracle.sh`), `tests/state.roc` (the state bound), `tests/fixtures.roc` (archives of GNU tar 1.35 in the gnu, pax and ustar formats and of roc bundle, against their `tar -tv`) | `roc test` |
+| L0 | `tests/header.roc` (fields, types, checksum, octal, magic, paths, `check_path`), `tests/stream.roc` (a split at each byte, chunks of 1 to 1100 bytes, a cut at each byte, the end blocks, padding), `tests/meta.roc` (pax `x` and `g`, GNU `L` and `K`), `tests/limits.roc` (each limit), `tests/portable.roc` (each rule of `check_portable_path` and `roc_accepts`, and the verdicts of `roc bundle` in `tests/fixtures/portable.tsv`, made by `scripts/portable-oracle.sh`), `tests/state.roc` (the state bound), `tests/fixtures.roc` (archives of GNU tar 1.35 in the gnu, pax and ustar formats and of roc bundle, against their `tar -tv`) | `roc test` |
 | L1 | `fuzz/split.roc` (on mutated archives and on any bytes: no crash, and the chunk sizes do not change the result), `fuzz/roundtrip.roc` (random members written with ustar prefix, pax `path` or GNU `L`, read back in random chunks) | [roc-fuzz](https://github.com/lukewilliamboswell/roc-fuzz) 0.4.3 |
 | Real bundles | `scripts/bundles.sh [ROC] [FILE.tar.zst...]`: `tests/tools/tarlist.roc` (basic-cli, reads standard input in chunks) against GNU `tar -tv`, for the fixtures and each bundle in the roc cache | basic-cli 0.26.0, GNU tar |
-| Mutations | `scripts/mutants.py ROC [ID...]`: 14 changes to tricky rules of `package/Tar.roc`; each must make a test fail | `roc test` |
+| Mutations | `scripts/mutants.py ROC [ID...]`: 17 changes to tricky rules of `package/Tar.roc`; each must make a test fail | `roc test` |
 
 `scripts/test.sh [ROC [FUZZ_ROC]]` runs `roc check`, `roc fmt --check`, the L0 tests and the L1 targets. `scripts/fixtures.sh` makes `tests/fixtures/` again. Use the nightly in `.roc-version` (the nightly of the Cloudflare Workers platform 0.0.2). CI (`.github/workflows/ci.yml`) runs the same checks on that nightly. The package also checks and passes `tests/header.roc` on `nightly-2026-10-14-38a3029`.
 
@@ -237,8 +260,11 @@ header_and_paths = |chunks| {
 | M12 | portable path: a reserved name is the whole part, not the text before the first `.` | portable.roc |
 | M13 | portable path: 256 bytes are good | portable.roc |
 | M14 | state: `max_meta_bytes` does not count the kept pax and GNU values | state.roc |
+| M15 | type byte: NUL is given as `0` (the byte of the kind, not of the header) | header.roc, meta.roc |
+| M16 | `roc_accepts`: `7` is accepted, as its kind is `File` | portable.roc |
+| M17 | `roc_accepts`: a link target is checked with `/` as the only separator | portable.roc |
 
-All 14 are killed. M3 is killed only by the fixtures: the test writer puts a space in the last checksum byte, and GNU tar and Zig put a NUL there.
+All 17 are killed. M15 to M17: 2026-11-02, the same nightly. M3 is killed only by the fixtures: the test writer puts a space in the last checksum byte, and GNU tar and Zig put a NUL there.
 
 ## Measurement
 

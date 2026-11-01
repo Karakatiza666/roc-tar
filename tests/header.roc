@@ -29,7 +29,7 @@ error_of = |bytes| match Mk.run([bytes], Mk.skip) {
 # USTAR, REG2: the fields of a regular file
 expect
 	entry_of(Mk.H.{ name: "src/main.roc", size: 12, mode: 0o755 })
-		== Ok({ path: "src/main.roc", kind: File, size: 12, mode: 0o755, link: "", offset: 0 })
+		== Ok({ path: "src/main.roc", kind: File, size: 12, mode: 0o755, link: "", offset: 0, type_byte: '0' })
 
 # USTAR, REG6: each type byte gives its kind; a link has its target
 expect entry_of(Mk.H.{ name: "d/", type: '5' }).map_ok(|e| e.kind) == Ok(Dir)
@@ -40,6 +40,16 @@ expect entry_of(Mk.H.{ name: "f", type: '7', size: 3 }).map_ok(|e| e.kind) == Ok
 expect entry_of(Mk.H.{ name: "c", type: '3' }).map_ok(|e| e.kind) == Ok(Other('3'))
 expect entry_of(Mk.H.{ name: "p", type: '6' }).map_ok(|e| e.kind) == Ok(Other('6'))
 expect entry_of(Mk.H.{ name: "v", type: 'V', size: 2 }).map_ok(|e| e.kind) == Ok(Other('V'))
+
+# USTAR, API: `type_byte` is the type byte of the header, as it is; `kind`
+# gives File for '0', NUL and '7' (Talon slice 111: roc unbundle refuses '7')
+expect entry_of(Mk.H.{ name: "f" }).map_ok(|e| (e.kind, e.type_byte)) == Ok((File, '0'))
+expect entry_of(Mk.H.{ name: "f", type: 0 }).map_ok(|e| (e.kind, e.type_byte)) == Ok((File, 0))
+expect entry_of(Mk.H.{ name: "f", type: '7', size: 3 }).map_ok(|e| (e.kind, e.type_byte)) == Ok((File, '7'))
+expect entry_of(Mk.H.{ name: "d/", type: '5' }).map_ok(|e| (e.kind, e.type_byte)) == Ok((Dir, '5'))
+expect entry_of(Mk.H.{ name: "s", type: '2', link: "x" }).map_ok(|e| (e.kind, e.type_byte)) == Ok((Symlink, '2'))
+expect entry_of(Mk.H.{ name: "h", type: '1', link: "a" }).map_ok(|e| (e.kind, e.type_byte)) == Ok((HardLink, '1'))
+expect entry_of(Mk.H.{ name: "c", type: '3' }).map_ok(|e| (e.kind, e.type_byte)) == Ok((Other('3'), '3'))
 
 # USTAR, REG2: the path is prefix, "/", name
 expect

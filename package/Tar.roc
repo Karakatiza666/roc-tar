@@ -58,8 +58,11 @@ Tar :: {
 	## the pax `path` or the GNU long name if there is one, else the ustar
 	## prefix, `/` and name. `link` is the link target (empty for most
 	## members). `mode` is the permission bits of the header. `offset` is the
-	## archive offset of the ustar header of the member.
-	Entry : { path : Str, kind : Tar.Kind, size : U64, mode : U32, link : Str, offset : U64 }
+	## archive offset of the ustar header of the member. `type_byte` is the
+	## type byte (offset 156) of that header, as it is: not the byte of a pax
+	## `x` or GNU `L`/`K` header before it. `kind` gives `File` for `'0'`, NUL
+	## and `'7'`; `type_byte` tells them apart.
+	Entry : { path : Str, kind : Tar.Kind, size : U64, mode : U32, link : Str, offset : U64, type_byte : U8 }
 
 	## What the reader does with the data of one member. `Collect(limit)`: a
 	## member of more than `limit` bytes is the error `ContentTooLarge`, never
@@ -305,6 +308,33 @@ Tar :: {
 		Ok({})
 	}
 
+	## `Ok({})` when `roc unbundle` accepts the member on every OS. roc-lang/roc
+	## commit 76258c1267204e31e58d8edcdd3ede6163ef60db, `src/unbundle/unbundle.zig`
+	## (`unbundleStream`), reads with `std.tar.Iterator` of Zig 0.17.0
+	## (`lib/std/tar.zig`, `Iterator.next`), with no diagnostics. The checks, in
+	## this order:
+	##
+	## | Order | Rule | Error |
+	## | --- | --- | --- |
+	## | 1 | `type_byte` is not `'0'`, NUL, `'5'` or `'2'`. Zig gives `error.TarUnsupportedHeader` for each other member type (`'1'`, `'3'`, `'4'`, `'6'`, `'7'`, `'S'`, vendor types). | `UnsupportedType(byte)` |
+	## | 2 | `check_portable_path(path)` fails (`pathHasUnbundleErr`, for each member) | `Path(error)` |
+	## | 3 | For a symbolic link (`'2'`): the target starts with `/` or `\`, its second byte is `:`, or a part between `/` or `\` is `..` or `.` (`linkTargetUnbundleErr`, the rules of each OS together) | `Link(error)` |
+	##
+	## roc unbundle does not make a symbolic link that it accepts. `roc bundle`
+	## writes only type `'0'`.
+	roc_accepts : Tar.Entry -> Try({}, [UnsupportedType(U8), Path([EmptyPath, TooLong, Absolute, DriveLetter, ParentDir, DotPart, ReservedName, EndsWithSpace, EndsWithPeriod, ReservedChar(U8), Backslash]), Link([Absolute, DriveLetter, ParentDir, DotPart])])
+	roc_accepts = |entry| {
+		type = entry.type_byte
+		if !(type == '0' or type == 0 or type == '5' or type == '2') {
+			return Err(UnsupportedType(type))
+		}
+		check_portable_path(entry.path) ? |e| Path(e)
+		if type == '2' {
+			check_link(entry.link) ? |e| Link(e)
+		}
+		Ok({})
+	}
+
 	## The bytes of state that the reader keeps now: the part of a header
 	## that two chunks split (at most 511), the pax and GNU values for the next
 	## members, and the data buffer of the member or meta header that it reads
@@ -496,7 +526,7 @@ member = |t, h, format, type, mode, header_size, choose| {
 	if size > limits.max_total_size - U64.min(t.total_size, limits.max_total_size) {
 		return Err(TotalSizeTooLarge({ offset: at, limit: limits.max_total_size }))
 	}
-	entry = { path, kind, size, mode: mode.to_u32_wrap(), link, offset: at }
+	entry = { path, kind, size, mode: mode.to_u32_wrap(), link, offset: at, type_byte: type }
 	t1 = {
 		..t,
 		members: t.members + 1,
@@ -599,6 +629,29 @@ parts = |bytes| {
 		}
 	}
 	if ($cur.is_empty()) $out else $out.append($cur)
+}
+
+# The link target rules of `linkTargetUnbundleErr` (roc
+# `src/unbundle/unbundle.zig`), of Unix and Windows together.
+check_link : Str -> Try({}, [Absolute, DriveLetter, ParentDir, DotPart])
+check_link = |target| {
+	bytes = target.to_utf8()
+	first = bytes.get(0) ?? 0
+	if first == '/' or first == '\\' {
+		return Err(Absolute)
+	}
+	if bytes.get(1) == Ok(':') {
+		return Err(DriveLetter)
+	}
+	for part in parts(bytes) {
+		if part == ['.', '.'] {
+			return Err(ParentDir)
+		}
+		if part == ['.'] {
+			return Err(DotPart)
+		}
+	}
+	Ok({})
 }
 
 # The bytes before the first `stop`.

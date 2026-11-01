@@ -1,6 +1,7 @@
 app [main!] { pkg: "../package/main.roc" }
 
 import pkg.Tar
+import lib/Mk as Mk
 import "fixtures/portable.tsv" as oracle : Str
 
 main! = |_args| Ok({})
@@ -121,3 +122,62 @@ verdict = |r| match r {
 	Err(ReservedChar(_)) => "ReservedChar"
 	Err(Backslash) => "Backslash"
 }
+
+# ROC-UNBUNDLE: `Tar.roc_accepts`. `unbundleStream` in src/unbundle/unbundle.zig
+# of roc-lang/roc (commit 76258c1267204e31e58d8edcdd3ede6163ef60db) reads with
+# `std.tar.Iterator` of Zig 0.17.0: it gives types '0', NUL, '5' and '2'
+# (`Header.kind`, `Iterator.next` in lib/std/tar.zig), and each other member
+# type is `error.TarUnsupportedHeader`. Then the path rules for each member,
+# and `linkTargetUnbundleErr` for a symbolic link.
+accepts : Mk.H -> Try({}, _)
+accepts = |h| match Mk.run([Mk.member(h, List.repeat('d', h.size)).concat(Mk.end)], Mk.skip) {
+	Ok({ events: [Entry(e), ..], .. }) => Tar.roc_accepts(e)
+	_ => Err(NoEntry)
+}
+
+# ROC-UNBUNDLE rule 1: the member types that roc unbundle reads
+expect accepts(Mk.H.{ name: "f", size: 2 }) == Ok({})
+expect accepts(Mk.H.{ name: "f", type: 0, size: 2 }) == Ok({})
+expect accepts(Mk.H.{ name: "d", type: '5' }) == Ok({})
+expect accepts(Mk.H.{ name: "s", type: '2', link: "x/y" }) == Ok({})
+
+# ROC-UNBUNDLE rule 1, REG8: '7' is a File to the reader, but roc unbundle refuses it
+expect accepts(Mk.H.{ name: "f", type: '7', size: 2 }) == Err(UnsupportedType('7'))
+expect accepts(Mk.H.{ name: "h", type: '1', link: "f" }) == Err(UnsupportedType('1'))
+expect accepts(Mk.H.{ name: "c", type: '3' }) == Err(UnsupportedType('3'))
+expect accepts(Mk.H.{ name: "p", type: '6' }) == Err(UnsupportedType('6'))
+expect accepts(Mk.H.{ name: "v", type: 'S', size: 1 }) == Err(UnsupportedType('S'))
+
+# ROC-UNBUNDLE rule 1: the type of the member header decides, also after pax and GNU headers
+expect {
+	bytes = Mk.pax('x', [("path", "a/b.roc")]).concat(Mk.member(Mk.H.{ name: "x", type: '7', size: 1 }, ['d'])).concat(Mk.end)
+	match Mk.run([bytes], Mk.skip) {
+		Ok({ events: [Entry(e)], .. }) => Tar.roc_accepts(e) == Err(UnsupportedType('7'))
+		_ => Bool.False
+	}
+}
+expect {
+	bytes = Mk.long('L', "a/long.roc").concat(Mk.file("x", [])).concat(Mk.end)
+	match Mk.run([bytes], Mk.skip) {
+		Ok({ events: [Entry(e)], .. }) => Tar.roc_accepts(e) == Ok({})
+		_ => Bool.False
+	}
+}
+
+# ROC-UNBUNDLE rule 2: the path rules, for each type that roc unbundle reads
+expect accepts(Mk.H.{ name: "a/../b" }) == Err(Path(ParentDir))
+expect accepts(Mk.H.{ name: "con/", type: '5' }) == Err(Path(ReservedName))
+expect accepts(Mk.H.{ name: "a ", type: '2', link: "x" }) == Err(Path(EndsWithSpace))
+
+# ROC-UNBUNDLE rule 1 comes before rule 2
+expect accepts(Mk.H.{ name: "a/../b", type: '7' }) == Err(UnsupportedType('7'))
+
+# ROC-UNBUNDLE rule 3: the link target of a symbolic link (Unix and Windows rules)
+expect accepts(Mk.H.{ name: "s", type: '2', link: "/etc" }) == Err(Link(Absolute))
+expect accepts(Mk.H.{ name: "s", type: '2', link: "\\x" }) == Err(Link(Absolute))
+expect accepts(Mk.H.{ name: "s", type: '2', link: "C:x" }) == Err(Link(DriveLetter))
+expect accepts(Mk.H.{ name: "s", type: '2', link: "a/../../x" }) == Err(Link(ParentDir))
+expect accepts(Mk.H.{ name: "s", type: '2', link: "a\\..\\x" }) == Err(Link(ParentDir))
+expect accepts(Mk.H.{ name: "s", type: '2', link: "./x" }) == Err(Link(DotPart))
+expect accepts(Mk.H.{ name: "s", type: '2', link: "a//b/" }) == Ok({})
+expect accepts(Mk.H.{ name: "s", type: '2', link: "..x/.y" }) == Ok({})

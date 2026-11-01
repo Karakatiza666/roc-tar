@@ -32,7 +32,7 @@ whole : Try({ events : List(Tar.Event), summary : Tar.Summary }, Tar.Error)
 whole = Mk.run([archive], choose)
 
 entry : Str, U64, U64 -> Tar.Entry
-entry = |path, size, offset| { path, kind: File, size, mode: 0o644, link: "", offset }
+entry = |path, size, offset| { path, kind: File, size, mode: 0o644, link: "", offset, type_byte: '0' }
 
 # USTAR, REG2, REG3: the events of the archive in one chunk
 expect

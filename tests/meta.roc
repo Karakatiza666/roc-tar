@@ -106,6 +106,18 @@ expect {
 expect paths(Mk.long('L', long).concat(Mk.file("short", [])).concat(Mk.file("next", []))) == Ok([long, "next"])
 expect entries(Mk.long('K', "target/${long}").concat(Mk.header(Mk.H.{ name: "s", type: '2', link: "t" }))).map_ok(|es| es.map(|e| e.link)) == Ok(["target/${long}"])
 
+# PAX, GNU, API: `type_byte` is the byte of the member header, not of the
+# `x`, `g`, `L` or `K` header before it
+types : List(U8) -> Try(List(U8), [Failed(Tar.Error)])
+types = |bytes| entries(bytes).map_ok(|es| es.map(|e| e.type_byte))
+
+expect types(Mk.pax('x', [("path", long)]).concat(Mk.file("a", []))) == Ok(['0'])
+expect types(Mk.pax('x', [("path", long)]).concat(Mk.member(Mk.H.{ name: "a", type: '7', size: 2 }, ['h', 'i']))) == Ok(['7'])
+expect types(Mk.pax('g', [("path", "g")]).concat(Mk.member(Mk.H.{ name: "a", type: 0 }, []))) == Ok([0])
+expect types(Mk.long('L', long).concat(Mk.member(Mk.H.{ name: "d", type: '5' }, []))) == Ok(['5'])
+expect types(Mk.long('K', "t/${long}").concat(Mk.header(Mk.H.{ name: "s", type: '2', link: "t" }))) == Ok(['2'])
+expect types(Mk.long('L', long).concat(Mk.long('K', "t").concat(Mk.header(Mk.H.{ name: "h", type: '1', link: "t" })))) == Ok(['1'])
+
 # GNU, PAX: a pax `path` wins over a GNU long name
 expect paths(Mk.long('L', "gnu").concat(Mk.pax('x', [("path", "pax")])).concat(Mk.file("h", []))) == Ok(["pax"])
 
