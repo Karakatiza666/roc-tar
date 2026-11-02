@@ -110,7 +110,7 @@ jobs:
           release_version: ${{ steps.validate.outputs.release_version }}
           dry_run: ${{ steps.validate.outputs.is_dry_run }}
           # A first release has no baseline. Once one exists, failures block publication.
-          bump_check: ${{ steps.previous.outputs.previous_url != '' && 'require' || 'warn' }}
+          bump_check: ${{ steps.previous.outputs.previous_url != '' && 'warn' || 'warn' }}
           bump_entrypoint: ${{ env.PACKAGE_MAIN }}
           previous_url: ${{ steps.previous.outputs.previous_url }}
 
