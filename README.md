@@ -135,7 +135,11 @@ Rules 10 and 11 give the first such byte of the path. `roc unbundle` checks a sy
 
 ### Member types of roc unbundle
 
-`roc unbundle` (`unbundleStream` in `src/unbundle/unbundle.zig`, roc-lang/roc commit `76258c1267204e31e58d8edcdd3ede6163ef60db`) reads with `std.tar.Iterator` of Zig 0.17.0 (`Iterator.next` in `lib/std/tar.zig`), with no diagnostics. `Tar.roc_accepts(entry)` applies its rules in this order and gives the first rule that fails:
+`roc unbundle` (`unbundleStream` in `src/unbundle/unbundle.zig`, roc-lang/roc commit `76258c1267204e31e58d8edcdd3ede6163ef60db`) reads with `std.tar.Iterator` of Zig 0.17.0 (`Iterator.next` in `lib/std/tar.zig`), with no diagnostics. `Tar.roc_accepts(entry)` applies its rules in this order and gives the first rule that fails.
+
+`roc_accepts` is the rule of `roc unbundle`, not a strict "file or directory only" rule. It accepts a symbolic link (`2`) when its target is safe (rule 3). If your rule refuses all links, check `entry.type_byte` (or `entry.kind`) yourself, in addition to `roc_accepts` or in its place.
+
+The rules, in order (the first rule that fails is the error):
 
 | Order | Rule | Error |
 | --- | --- | --- |
@@ -190,7 +194,7 @@ All 36 bundles in the local roc cache (2 KB to 100 MB unpacked) have only type `
 Add the release to the header of your app, package or platform:
 
 ```roc
-tar: "https://github.com/Karakatiza666/roc-tar/releases/download/0.0.1/FGAUE1Pds7Fvd48GkrAYd9rRUpztew8bgUZjUrKPGyo7.tar.zst",
+tar: "https://github.com/Karakatiza666/roc-tar/releases/download/0.0.2/ynGk61syE32Lobjgwd3ZNRURf78xPGxr8Nzi1bSuhUr.tar.zst",
 ```
 
 Then, for example, the header file and the paths of an archive that comes in chunks:

@@ -311,7 +311,10 @@ Tar :: {
 	## `Ok({})` when `roc unbundle` accepts the member on every OS. roc-lang/roc
 	## commit 76258c1267204e31e58d8edcdd3ede6163ef60db, `src/unbundle/unbundle.zig`
 	## (`unbundleStream`), reads with `std.tar.Iterator` of Zig 0.17.0
-	## (`lib/std/tar.zig`, `Iterator.next`), with no diagnostics. The checks, in
+	## (`lib/std/tar.zig`, `Iterator.next`), with no diagnostics. It is the rule
+	## of `roc unbundle`, not a strict "file or directory only" rule: a symbolic
+	## link with a safe target is `Ok`. To refuse all links, check `type_byte`.
+	## The checks, in
 	## this order:
 	##
 	## | Order | Rule | Error |
